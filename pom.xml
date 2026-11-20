@@ -80,6 +80,36 @@
                         <phase>verify</phase>
                         <goals><goal>report</goal></goals>
                     </execution>
+                    <!-- Quality gate (AmaliTech Coding Standards §9): the build fails if any
+                         line or branch of the service is left untested. Demo is a console
+                         entry point with no business logic, so it is excluded. -->
+                    <execution>
+                        <id>coverage-gate</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/tidewater/freight/Demo.class</exclude>
+                            </excludes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>1.00</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>1.00</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -96,6 +126,16 @@
                         <version>${pitest.junit5.version}</version>
                     </dependency>
                 </dependencies>
+                <!-- Quality gate (AmaliTech Coding Standards §9): mvn verify also runs PIT and
+                     fails the build if any mutant survives. Coverage alone cannot detect a test
+                     that runs code without checking it; this gate can. -->
+                <executions>
+                    <execution>
+                        <id>mutation-gate</id>
+                        <phase>verify</phase>
+                        <goals><goal>mutationCoverage</goal></goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <targetClasses>
                         <param>com.tidewater.freight.*</param>
@@ -103,6 +143,11 @@
                     <targetTests>
                         <param>com.tidewater.freight.*</param>
                     </targetTests>
+                    <excludedClasses>
+                        <param>com.tidewater.freight.Demo</param>
+                    </excludedClasses>
+                    <mutationThreshold>100</mutationThreshold>
+                    <timestampedReports>false</timestampedReports>
                 </configuration>
             </plugin>
         </plugins>
