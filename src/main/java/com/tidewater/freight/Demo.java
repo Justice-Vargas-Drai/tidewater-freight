@@ -1,11 +1,28 @@
 package com.tidewater.freight;
 
-public class Demo {
-    public static void main(String[] args) {
-        ShippingCalculator calculator = new ShippingCalculator();
+/** Prints a few sample quotes. This is the one place that writes to the console. */
+public final class Demo {
 
-        System.out.println("Result DOMESTIC 10kg STANDARD       -> " + calculator.calculateCost("DOMESTIC", 10, "STANDARD"));
-        System.out.println("Result INTERNATIONAL 40kg EXPRESS   -> " + calculator.calculateCost("INTERNATIONAL", 40, "EXPRESS"));
-        System.out.println("Result unknown zone MOON 10kg STD   -> " + calculator.calculateCost("MOON", 10, "STANDARD"));
+    private Demo() {
+    }
+
+    public static void main(String[] args) {
+        ShippingCalculator calculator =
+                new ShippingCalculator(InMemoryRateRepository.withStandardZones());
+
+        printQuote(calculator, "DOMESTIC", 10, "STANDARD");
+        printQuote(calculator, "INTERNATIONAL", 40, "EXPRESS");
+        printQuote(calculator, "MOON", 10, "STANDARD");
+    }
+
+    private static void printQuote(
+            ShippingCalculator calculator, String zone, double weightKg, String serviceLevel) {
+        String request = zone + " " + weightKg + "kg " + serviceLevel;
+        try {
+            Shipment shipment = new Shipment(zone, weightKg, ServiceLevel.fromCode(serviceLevel));
+            System.out.println(request + " -> GHS " + calculator.calculateCost(shipment));
+        } catch (ShippingCostException e) {
+            System.out.println(request + " -> no quote: " + e.getMessage());
+        }
     }
 }

@@ -1,29 +1,39 @@
 package com.tidewater.freight;
 
+import java.util.Objects;
+
+/**
+ * Works out the cost of a shipment: the zone's base cost, plus the heavy-item surcharge,
+ * with the service level applied last to the whole subtotal.
+ */
 public class ShippingCalculator {
 
-    // Temporary: still hard-wired; the next step injects the repository.
-    private final RateRepository repository = InMemoryRateRepository.withStandardZones();
+    static final double HEAVY_ITEM_THRESHOLD_KG = 30.0;
+    static final double HEAVY_ITEM_SURCHARGE = 20.0;
 
-    public double calculateCost(String zone, double weightKg, String serviceLevel) {
-        try {
-            double cost = repository.findPricing(zone).baseCost(weightKg);
+    private final RateRepository rateRepository;
 
-            // heavy-item surcharge
-            if (weightKg > 30) {
-                cost = cost + 20;
-            }
+    public ShippingCalculator(RateRepository rateRepository) {
+        this.rateRepository = Objects.requireNonNull(rateRepository, "rateRepository");
+    }
 
-            // express costs more
-            if (serviceLevel.equals("EXPRESS")) {
-                cost = cost * 1.5;
-            }
+    /**
+     * Returns the cost of the shipment in GHS.
+     *
+     * @throws UnknownZoneException if the repository has no pricing for the shipment's zone
+     */
+    public double calculateCost(Shipment shipment) {
+        Objects.requireNonNull(shipment, "shipment");
+        ZonePricing pricing = rateRepository.findPricing(shipment.zone());
+        double subtotal = pricing.baseCost(shipment.weightKg())
+                + heavyItemSurcharge(shipment.weightKg());
+        return shipment.serviceLevel().applyTo(subtotal);
+    }
 
-            System.out.println("Shipping " + zone + " (" + weightKg + "kg, " + serviceLevel + "): GHS " + cost);
-            return cost;
-        } catch (Exception e) {
-            // could not work out a rate (for example an unknown zone) - return zero
-            return 0;
+    private double heavyItemSurcharge(double weightKg) {
+        if (weightKg > HEAVY_ITEM_THRESHOLD_KG) {
+            return HEAVY_ITEM_SURCHARGE;
         }
+        return 0.0;
     }
 }

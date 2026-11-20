@@ -1,17 +1,22 @@
 package com.tidewater.freight;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * Pins the prices the inherited calculator produces for valid shipments, so the refactor
- * can prove it changed the structure and not the prices.
+ * Integration test: the real calculator with Tidewater's real zones. The prices were pinned
+ * against the inherited calculator before the refactor, and must not change.
  */
 class ShippingPriceCharacterizationTest {
 
     private static final double EXACT = 1e-9;
+
+    private final ShippingCalculator calculator =
+            new ShippingCalculator(InMemoryRateRepository.withStandardZones());
 
     @ParameterizedTest(name = "{0}, {1} kg, {2} costs GHS {3}")
     @CsvSource({
@@ -26,8 +31,17 @@ class ShippingPriceCharacterizationTest {
     })
     void chargesTheSamePriceAsTheInheritedCalculator(
             String zone, double weightKg, String serviceLevel, double expectedCost) {
-        ShippingCalculator calculator = new ShippingCalculator();
+        Shipment shipment = new Shipment(zone, weightKg, ServiceLevel.fromCode(serviceLevel));
 
-        assertEquals(expectedCost, calculator.calculateCost(zone, weightKg, serviceLevel), EXACT);
+        assertEquals(expectedCost, calculator.calculateCost(shipment), EXACT);
+    }
+
+    @Test
+    void refusesToPriceAnUnknownZoneInsteadOfChargingNothing() {
+        Shipment shipment = new Shipment("MOON", 10, ServiceLevel.STANDARD);
+
+        UnknownZoneException failure =
+                assertThrows(UnknownZoneException.class, () -> calculator.calculateCost(shipment));
+        assertEquals("No pricing rules for shipping zone: MOON", failure.getMessage());
     }
 }
