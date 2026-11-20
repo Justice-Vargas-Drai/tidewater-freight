@@ -2,22 +2,12 @@ package com.tidewater.freight;
 
 public class ShippingCalculator {
 
-    // The calculator makes its own rate source, so callers and tests cannot give it another.
-    private final RateRepository repository = new InMemoryRateRepository();
+    // Temporary: still hard-wired; the next step injects the repository.
+    private final RateRepository repository = InMemoryRateRepository.withStandardZones();
 
     public double calculateCost(String zone, double weightKg, String serviceLevel) {
         try {
-            double rate = repository.findRate(zone);
-            double cost = rate * weightKg;
-
-            // zone-specific fees
-            if (zone.equals("DOMESTIC")) {
-                // no extra fee
-            } else if (zone.equals("REGIONAL")) {
-                cost = cost + 10; // handling fee
-            } else if (zone.equals("INTERNATIONAL")) {
-                cost = cost + 25; // customs handling
-            }
+            double cost = repository.findPricing(zone).baseCost(weightKg);
 
             // heavy-item surcharge
             if (weightKg > 30) {

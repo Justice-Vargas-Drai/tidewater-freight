@@ -1,24 +1,38 @@
 package com.tidewater.freight;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/** Holds zone pricing in memory. Each zone's rate and fee live together in one entry. */
 public class InMemoryRateRepository implements RateRepository {
 
-    private final Map<String, Double> rates = new HashMap<>();
+    private final Map<String, ZonePricing> pricingByZone = new HashMap<>();
 
-    public InMemoryRateRepository() {
-        rates.put("DOMESTIC", 5.0);
-        rates.put("REGIONAL", 8.0);
-        rates.put("INTERNATIONAL", 15.0);
+    public InMemoryRateRepository(Collection<? extends ZonePricing> zonePricings) {
+        for (ZonePricing pricing : zonePricings) {
+            if (pricingByZone.putIfAbsent(pricing.zone(), pricing) != null) {
+                throw new IllegalArgumentException(
+                        "Pricing for zone " + pricing.zone() + " is defined twice");
+            }
+        }
+    }
+
+    /** Tidewater's current zones, with the same rates and fees as the original service. */
+    public static InMemoryRateRepository withStandardZones() {
+        return new InMemoryRateRepository(List.of(
+                new FlatRateZonePricing("DOMESTIC", 5.0, 0.0),
+                new FlatRateZonePricing("REGIONAL", 8.0, 10.0),
+                new FlatRateZonePricing("INTERNATIONAL", 15.0, 25.0)));
     }
 
     @Override
-    public double findRate(String zone) {
-        Double rate = rates.get(zone);
-        if (rate == null) {
-            throw new IllegalArgumentException("Unknown zone: " + zone);
+    public ZonePricing findPricing(String zone) {
+        ZonePricing pricing = pricingByZone.get(zone);
+        if (pricing == null) {
+            throw new UnknownZoneException(zone);
         }
-        return rate;
+        return pricing;
     }
 }
