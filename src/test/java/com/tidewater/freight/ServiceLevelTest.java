@@ -34,7 +34,8 @@ class ServiceLevelTest {
         UnknownServiceLevelException failure =
                 assertThrows(UnknownServiceLevelException.class, () -> ServiceLevel.fromCode(code));
 
-        assertEquals("Unknown service level: " + code, failure.getMessage());
+        assertEquals("Unknown service level: " + code + " (expected one of [STANDARD, EXPRESS])",
+                failure.getMessage());
         assertInstanceOf(IllegalArgumentException.class, failure.getCause());
     }
 
@@ -43,6 +44,6 @@ class ServiceLevelTest {
         UnknownServiceLevelException failure =
                 assertThrows(UnknownServiceLevelException.class, () -> ServiceLevel.fromCode(null));
 
-        assertEquals("Unknown service level: null", failure.getMessage());
+        assertEquals("A service level code is required", failure.getMessage());
     }
 }

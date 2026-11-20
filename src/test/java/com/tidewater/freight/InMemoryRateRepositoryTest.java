@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class InMemoryRateRepositoryTest {
 
@@ -37,9 +40,14 @@ class InMemoryRateRepositoryTest {
         assertEquals("No pricing rules for shipping zone: MOON", failure.getMessage());
     }
 
-    @Test
-    void missingZoneThrowsUnknownZone() {
-        assertThrows(UnknownZoneException.class, () -> standardZones.findPricing(null));
+    @ParameterizedTest(name = "zone \"{0}\" is unknown")
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void missingOrBlankZoneThrowsUnknownZone(String zone) {
+        UnknownZoneException failure =
+                assertThrows(UnknownZoneException.class, () -> standardZones.findPricing(zone));
+
+        assertEquals("No pricing rules for shipping zone: " + zone, failure.getMessage());
     }
 
     @Test

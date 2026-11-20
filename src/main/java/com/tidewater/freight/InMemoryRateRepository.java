@@ -19,7 +19,10 @@ public class InMemoryRateRepository implements RateRepository {
         }
     }
 
-    /** Tidewater's current zones, with the same rates and fees as the original service. */
+    /**
+     * Seed data: Tidewater's current zones, with the same rates and fees as the original
+     * service. A production rate source would load these from configuration instead.
+     */
     public static InMemoryRateRepository withStandardZones() {
         return new InMemoryRateRepository(List.of(
                 new FlatRateZonePricing("DOMESTIC", 5.0, 0.0),
@@ -29,6 +32,9 @@ public class InMemoryRateRepository implements RateRepository {
 
     @Override
     public ZonePricing findPricing(String zone) {
+        if (zone == null || zone.isBlank()) {
+            throw new UnknownZoneException(zone);
+        }
         ZonePricing pricing = pricingByZone.get(zone);
         if (pricing == null) {
             throw new UnknownZoneException(zone);

@@ -22,6 +22,8 @@ public final class Demo {
             Shipment shipment = new Shipment(zone, weightKg, ServiceLevel.fromCode(serviceLevel));
             System.out.println(request + " -> GHS " + calculator.calculateCost(shipment));
         } catch (ShippingCostException e) {
+            // A console demo shows the reason to the person running it. A production caller
+            // would log the exception (with its stack trace) and return an error response.
             System.out.println(request + " -> no quote: " + e.getMessage());
         }
     }

@@ -1,6 +1,12 @@
 package com.tidewater.freight;
 
-/** A zone priced at a fixed rate per kilogram plus a fixed zone fee. */
+/**
+ * A zone priced at a fixed rate per kilogram plus a fixed zone fee.
+ *
+ * <p>Invalid values throw {@link IllegalArgumentException}, not a {@link ShippingCostException}:
+ * they are mistakes in Tidewater's zone configuration, not problems with a customer's shipment
+ * (see ANALYSIS.md, decision D3).
+ */
 public record FlatRateZonePricing(String zone, double ratePerKg, double zoneFee)
         implements ZonePricing {
 

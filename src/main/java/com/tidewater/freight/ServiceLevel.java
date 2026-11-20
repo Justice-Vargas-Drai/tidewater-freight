@@ -1,5 +1,7 @@
 package com.tidewater.freight;
 
+import java.util.Arrays;
+
 /** The service levels Tidewater offers, each with the multiplier it applies to a price. */
 public enum ServiceLevel {
     STANDARD(1.0),
@@ -22,12 +24,13 @@ public enum ServiceLevel {
      */
     public static ServiceLevel fromCode(String code) {
         if (code == null) {
-            throw new UnknownServiceLevelException(null);
+            throw new UnknownServiceLevelException("A service level code is required");
         }
         try {
             return valueOf(code);
         } catch (IllegalArgumentException e) {
-            throw new UnknownServiceLevelException(code, e);
+            throw new UnknownServiceLevelException("Unknown service level: " + code
+                    + " (expected one of " + Arrays.toString(values()) + ")", e);
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.tidewater.freight;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -21,8 +20,11 @@ class FlatRateZonePricingTest {
     }
 
     @Test
-    void allowsAZoneWithNoFee() {
-        assertDoesNotThrow(() -> new FlatRateZonePricing("DOMESTIC", 5.0, 0.0));
+    void zoneWithNoFeeCostsOnlyRateTimesWeight() {
+        FlatRateZonePricing domestic = new FlatRateZonePricing("DOMESTIC", 5.0, 0.0);
+
+        // 5 x 10 + 0
+        assertEquals(50.0, domestic.baseCost(10), EXACT);
     }
 
     @ParameterizedTest(name = "rate {0} per kg is refused")

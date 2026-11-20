@@ -67,12 +67,18 @@ class ShippingCalculatorTest {
 
     @Test
     void refusesToBeCreatedWithoutARateRepository() {
-        assertThrows(NullPointerException.class, () -> new ShippingCalculator(null));
+        NullPointerException failure =
+                assertThrows(NullPointerException.class, () -> new ShippingCalculator(null));
+
+        assertEquals("rateRepository", failure.getMessage());
     }
 
     @Test
     void refusesToPriceAMissingShipment() {
-        assertThrows(NullPointerException.class, () -> calculator.calculateCost(null));
+        NullPointerException failure =
+                assertThrows(NullPointerException.class, () -> calculator.calculateCost(null));
+
+        assertEquals("shipment", failure.getMessage());
     }
 
     private static Shipment shipment(double weightKg, ServiceLevel serviceLevel) {
