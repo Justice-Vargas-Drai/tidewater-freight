@@ -2,6 +2,7 @@
 
 This analysis was written **before any code was changed**. It describes the starter
 exactly as downloaded. Line numbers refer to `ShippingCalculator.java` unless stated.
+The section sign (§) always refers to the AmaliTech Coding Standards: Java Edition.
 
 ## 1. Baseline (measured on the untouched starter)
 
@@ -161,9 +162,9 @@ Sections 1–5 above are unchanged from the commit made before any code changed.
 
 | Measure | Before | After |
 |---|---|---|
-| Tests | 3 (two prove nothing) | 49, each asserting a real value or a specific failure |
+| Tests | 3 (two prove nothing) | 51 test cases from 30 test methods (some parameterized), each asserting a real value or a specific failure |
 | JaCoCo branch coverage | 50% (`ShippingCalculator`) | 100% in every class except `Demo` |
-| PIT mutants killed (excluding `Demo`) | 3 of 15 | 16 of 16 |
+| PIT mutants killed (excluding `Demo`) | 3 of 15 | 18 of 18 |
 | PIT test strength | 27% | 100% |
 | Unknown zone `MOON` | priced at GHS 0, no error | `UnknownZoneException`: "No pricing rules for shipping zone: MOON" |
 | Prices for valid shipments | — | unchanged: the 8 prices pinned against the original code still pass |
@@ -192,7 +193,7 @@ that only needs "no valid quote" catches the parent; a caller that cares why cat
 write catch blocks they cannot use, which is how empty catches like the original one get written.
 `ServiceLevel.fromCode` is the one place that translates an exception: it turns Java's
 `IllegalArgumentException` into `UnknownServiceLevelException` and keeps the original as the
-cause (§6.3).
+cause (Coding Standards §6.3).
 
 **D3. Customer errors and configuration errors are different signals.** A bad shipment (negative
 weight, unknown zone) throws one of our exceptions, because it describes the customer's request.
@@ -232,10 +233,13 @@ fee and heavy surcharge, and exactly 30 kg is not "heavy". Both are how the orig
 I kept them and pinned them with tests. Whether express should apply to fees is a question for
 the business, not something a refactor should change silently.
 
-**D9. I kept `double` for money.** All 8 pinned prices are identical to the original, and today's
-rates and fees produce exact values. Switching to `BigDecimal` would change every signature and
-needs a rounding rule the brief does not give. I record this as a known risk: if rates with
-fractions of a pesewa are introduced, money should move to `BigDecimal` with an agreed rounding rule.
+**D9. I kept `double` for money.** The original service used `double`, and the 8 characterization
+prices are preserved exactly. `double` is not exact for every input, though: DOMESTIC at 0.07 kg
+costs 0.35000000000000003 instead of 0.35. Switching to `BigDecimal` would change every signature
+and needs a rounding rule the brief does not give (to the pesewa? rounded up or to nearest?). I
+record this as a known risk, noted in the code at `ShippingCalculator.calculateCost`: before these
+prices are shown to customers or invoiced, money should move to `BigDecimal` with an agreed
+rounding rule.
 
 ### 6.4 How the design absorbs the new zone
 
@@ -275,8 +279,8 @@ Coverage alone cannot detect a test that runs code without checking it, which is
 wrong with the original suite. I checked this. I removed the assertion from the 30 kg unit test
 and the 30 kg row from the characterization test, so nothing guarded the `> 30` boundary. The
 coverage gate still passed, but the build failed with "Mutation score of 94 is below threshold of
-100", because the `>` to `>=` mutant survived. With both restored, 16 of 16 mutants are killed and
-the build passes.
+100", because the `>` to `>=` mutant survived. With both restored, all 16 mutants that existed at
+the time were killed and the build passed. After the hygiene fixes in 6.8, the suite kills 18 of 18.
 
 The gate has limits. It only requires the suite to kill the mutants PIT generates for the
 included classes, so it cannot prove that every rule is protected: a hollow test that duplicates
@@ -291,3 +295,33 @@ mutants alive, as the 94% run above showed, so this kind of weakness cannot be m
   by JaCoCo (100% of branches) and by boundary tests written to fail if a comparison changes
   (0 kg, rate 0, fee 0, NaN and infinity).
 - `Demo` is excluded from both gates, as explained above.
+
+### 6.8 Changes after the Professional Hygiene check
+
+I used Evalu8's hygiene check before submitting and acted on it as follows.
+
+**Fixed:**
+- The heavy-item constants are now `private`.
+- A missing service-level code has its own message ("A service level code is required"). An
+  unknown code now lists the valid codes, which is more useful to a caller than Java's
+  "No enum constant ..." message; the original exception is still kept as the cause.
+- `InMemoryRateRepository.findPricing` rejects a null or blank zone explicitly, instead of
+  relying on `HashMap.get(null)` happening to return nothing.
+- Weak assertions were strengthened: the zero-fee test now checks the price, the null-zone test
+  checks the message (and covers empty and blank), and the null-guard tests check which argument
+  was missing, so deleting a guard would fail a test.
+- Removed the unused `mockito-junit-jupiter` dependency.
+- The README now documents the Maven version and how to run the quality gate.
+
+**Clarified in code rather than changed:**
+- Why `FlatRateZonePricing` throws `IllegalArgumentException` (D3), in its class comment.
+- The `double` money risk (D9), at the calculation itself.
+- The standard zones are seed data, in `withStandardZones()`. Loading rates from a file would be
+  speculative today (YAGNI, §2.2).
+- `Demo` notes that a production caller would log the exception rather than only print its message.
+
+**Not changed:** making the 30 kg threshold configurable. It is a fixed business rule today, and
+nothing in the brief says it varies.
+
+After these changes: 51 test cases pass, line and branch coverage stay at 100%, and PIT kills
+18 of 18 mutants.

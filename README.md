@@ -1,48 +1,56 @@
 # Tidewater Freight — Shipping Cost Service
 
-This is the starter repository for the **Code Quality & Testing** applied lab.
-Read the lab brief alongside this repository; it explains the business, what you
-are being asked to deliver, and how your work is assessed.
+Works out the cost of a shipment from its destination zone, weight and service level.
+This repository is the refactored version of an AI-generated starter, completed for the
+AmaliTech **Code Quality & Testing** lab.
 
-## What this is
+**Start with [ANALYSIS.md](ANALYSIS.md):** what was wrong with the original code and tests
+(written before any code changed), and the Decisions section explaining the refactor.
 
-A small shipping-cost service that was written quickly with an AI assistant, together with the
-tests it produced. Everything compiles and the tests pass, so at a glance it
-looks finished. Your job is to bring it up to AmaliTech standard: judge what is
-actually wrong with the code **and** its tests, refactor it, make it genuinely
-testable, handle its failures properly, and replace the tests that only look
-like tests.
+## Requirements
+
+- JDK 21
+- Maven 3.9 or later (verified with Maven 3.9.16 and Java 21.0.13)
 
 ## Running it
 
-You need JDK 21 and Maven.
-
-**See the service run (a small demo, no tests):**
+**See some sample quotes, including an unknown zone being refused:**
 
 ```bash
 mvn compile
 mvn exec:java -Dexec.mainClass=com.tidewater.freight.Demo
 ```
 
-**Run the existing tests:**
+**Run the tests:**
 
 ```bash
 mvn test
 ```
 
-**Measure your tests** (coverage and mutation testing are already set up):
+**Run the tests and the quality gate:**
 
 ```bash
-mvn verify                                                  # tests + JaCoCo report: target/site/jacoco/index.html
-mvn test-compile org.pitest:pitest-maven:mutationCoverage   # PIT report: target/pit-reports/index.html
+mvn verify
 ```
 
-Run the demo and the tests before you change anything. Note what the demo prints for an unknown zone,
-and look carefully at whether the tests that pass actually prove anything.
+`mvn verify` fails the build if line or branch coverage drops below 100%, or if any PIT
+mutant survives. `Demo` is excluded from both checks. Reports:
 
-## What to hand in
+- Coverage: `target/site/jacoco/index.html`
+- Mutation testing: `target/pit-reports/index.html`
 
-See the lab brief for the full list: your written analysis (of the code and the
-tests), the refactored code, robust exception handling, a real test suite, a
-short rationale, and one improvement beyond the brief. You will talk through your
-work in a live review.
+## How it is organised
+
+| Class | Job |
+|---|---|
+| `ShippingCalculator` | Zone base cost, plus the heavy-item surcharge above 30 kg, with the service level applied last |
+| `Shipment` | One shipment; refuses invalid weights and missing details |
+| `ServiceLevel` | STANDARD and EXPRESS, each with its price multiplier |
+| `ZonePricing`, `FlatRateZonePricing` | Everything specific to one zone: rate per kg and zone fee |
+| `RateRepository`, `InMemoryRateRepository` | Supplies each zone's pricing; injected into the calculator |
+| `ShippingCostException` and subtypes | Why a shipment cannot be priced |
+| `Demo` | Prints sample quotes; the only class that writes to the console |
+
+**Adding a zone:** add a `FlatRateZonePricing` to `InMemoryRateRepository.withStandardZones()`,
+or, if the zone has different rules, write a new `ZonePricing` implementation. The calculator
+does not change.
